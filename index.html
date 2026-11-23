@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Hay Day Tarzı Çiftlik</title>
+  <title>2D Çiftlik Dünyası</title>
   <style>
     * {
       box-sizing: border-box;
@@ -14,108 +14,95 @@
     }
 
     body {
-      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-      background: #2c4a1e;
+      background: #1f3616;
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
       display: flex;
       justify-content: center;
+      align-items: center;
       min-height: 100vh;
+      overflow: hidden;
       touch-action: manipulation;
     }
 
-    .game-shell {
-      width: 100%;
-      max-width: 480px;
-      min-height: 100vh;
-      background: linear-gradient(180deg, #87ceeb 0%, #c9ecff 22%, #7cc957 22%, #68b845 55%, #5aa33b 100%);
+    .stage {
       position: relative;
-      overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 0 40px rgba(0,0,0,0.45);
+      width: 100vw;
+      max-width: 960px;
+      aspect-ratio: 840 / 600;
+      max-height: 100vh;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #6ab845;
     }
 
-    /* Hareketli bulutlar */
-    .sky-decor {
-      position: absolute;
-      top: 52px;
-      left: 0;
-      right: 0;
-      height: 70px;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    .cloud {
-      position: absolute;
-      font-size: 2.2rem;
-      opacity: 0.85;
-      animation: drift 28s linear infinite;
-    }
-    .cloud.c1 { top: 4px; left: -20%; animation-duration: 32s; }
-    .cloud.c2 { top: 24px; left: -40%; animation-duration: 44s; font-size: 1.7rem; }
-    .sun {
-      position: absolute;
-      top: 8px;
-      right: 16px;
-      font-size: 2.3rem;
-      filter: drop-shadow(0 0 10px rgba(255, 220, 80, 0.8));
-    }
-    @keyframes drift {
-      from { transform: translateX(0); }
-      to { transform: translateX(620px); }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
     }
 
     /* Üst HUD */
     .hud {
-      position: sticky;
-      top: 0;
-      z-index: 20;
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      right: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 12px;
-      background: linear-gradient(180deg, rgba(61, 37, 18, 0.92), rgba(92, 56, 28, 0.88));
-      border-bottom: 3px solid #d4a359;
-      color: #fff8e7;
-      gap: 8px;
+      pointer-events: none;
+      z-index: 10;
     }
 
-    .level-box {
+    .hud-group {
       display: flex;
       align-items: center;
       gap: 8px;
+      pointer-events: auto;
     }
 
-    .level-star {
-      width: 36px;
-      height: 36px;
-      background: linear-gradient(135deg, #ffd43b, #f08c00);
-      border: 2px solid #fff3bf;
+    .hud-card {
+      background: rgba(66, 39, 17, 0.88);
+      border: 2px solid #e0b363;
+      border-radius: 999px;
+      padding: 5px 12px;
+      color: #fff8e7;
+      font-weight: 800;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .hud-card.clickable {
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .hud-card.clickable:active {
+      transform: scale(0.95);
+    }
+
+    .lvl-badge {
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
+      background: linear-gradient(135deg, #ffd43b, #f08c00);
+      color: #4f2900;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 900;
-      color: #5c3400;
-      font-size: 1rem;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      border: 2px solid #fff3bf;
+      margin-left: -6px;
     }
 
-    .xp-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .xp-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #ffe8a3;
-    }
-
-    .xp-bar {
-      width: 78px;
+    .xp-track {
+      width: 70px;
       height: 8px;
-      background: rgba(0,0,0,0.4);
+      background: rgba(0, 0, 0, 0.45);
       border-radius: 99px;
       overflow: hidden;
       border: 1px solid #a67c46;
@@ -125,932 +112,177 @@
       height: 100%;
       width: 0%;
       background: linear-gradient(90deg, #4dabf7, #74c0fc);
-      transition: width 0.3s;
+      transition: width 0.25s;
     }
 
-    .hud-right {
+    /* Alt Tohum Seçici */
+    .dock {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
       gap: 8px;
-      align-items: center;
+      background: rgba(66, 39, 17, 0.88);
+      border: 2px solid #e0b363;
+      border-radius: 16px;
+      padding: 6px 10px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+      z-index: 10;
     }
 
-    .pill {
-      background: rgba(0, 0, 0, 0.35);
-      border: 2px solid #d4a359;
-      border-radius: 999px;
+    .seed-btn {
+      background: #fff5db;
+      border: 2px solid #b58342;
+      border-radius: 11px;
       padding: 5px 11px;
-      font-weight: 800;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      color: #fff;
-      cursor: pointer;
-    }
-
-    /* Çiftlik Haritası */
-    .farm-world {
-      position: relative;
-      z-index: 5;
-      padding: 66px 14px 90px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      flex: 1;
-    }
-
-    .section-title {
-      font-size: 0.78rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      color: #ffffff;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.45);
-      margin-bottom: 6px;
       display: flex;
       align-items: center;
       gap: 6px;
-    }
-
-    /* Binalar */
-    .buildings-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-
-    .building-card {
-      position: relative;
-      background: linear-gradient(180deg, #fff5dc 0%, #f0d7a7 100%);
-      border: 3px solid #7d4e24;
-      border-radius: 16px;
-      padding: 12px 6px 10px;
-      text-align: center;
       cursor: pointer;
-      box-shadow: 0 6px 0 #5c3716, 0 8px 14px rgba(0,0,0,0.25);
-      transition: transform 0.1s, box-shadow 0.1s;
-    }
-
-    .building-card:active {
-      transform: translateY(3px);
-      box-shadow: 0 3px 0 #5c3716;
-    }
-
-    .building-icon {
-      font-size: 2.3rem;
-      line-height: 1.1;
-      display: block;
-    }
-
-    .building-name {
+      color: #4a2c11;
+      font-weight: 800;
       font-size: 0.82rem;
-      font-weight: 800;
-      color: #4a2c11;
-      margin-top: 4px;
+      transition: transform 0.12s, background 0.15s;
     }
 
-    .building-status {
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: #7a5228;
-      margin-top: 2px;
-    }
-
-    .badge {
-      position: absolute;
-      top: -7px;
-      right: -7px;
-      background: #e03131;
-      color: #fff;
-      font-size: 0.72rem;
-      font-weight: 800;
-      padding: 3px 7px;
-      border-radius: 999px;
-      border: 2px solid #fff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      display: none;
-    }
-    .badge.show { display: inline-block; }
-
-    /* Hayvan Ağılları */
-    .pens-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .pen-card {
-      position: relative;
-      background: repeating-linear-gradient(
-        45deg,
-        #8fd158,
-        #8fd158 10px,
-        #84c74e 10px,
-        #84c74e 20px
-      );
-      border: 4px solid #8c5a2b;
-      border-radius: 16px;
-      padding: 12px 10px;
-      text-align: center;
-      cursor: pointer;
-      box-shadow: inset 0 0 12px rgba(0,0,0,0.12), 0 5px 0 #5e3a1a;
-      transition: transform 0.1s;
-    }
-
-    .pen-card:active { transform: scale(0.97); }
-    .pen-card.ready {
-      border-color: #ffd43b;
-      box-shadow: 0 0 14px rgba(255, 212, 59, 0.7), 0 5px 0 #b38600;
-    }
-
-    .pen-animals {
-      font-size: 2rem;
-      letter-spacing: 2px;
-      margin-bottom: 4px;
-    }
-
-    .pen-title {
-      font-size: 0.85rem;
-      font-weight: 800;
-      color: #264212;
-      background: rgba(255,255,255,0.75);
-      border-radius: 8px;
-      padding: 2px 6px;
-      display: inline-block;
-    }
-
-    .pen-sub {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #1f360f;
-      margin-top: 5px;
-    }
-
-    /* Tarlalar */
-    .fields-area {
-      background: rgba(66, 117, 36, 0.45);
-      border: 3px dashed rgba(255, 255, 255, 0.4);
-      border-radius: 18px;
-      padding: 12px;
-    }
-
-    .fields-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-
-    .field-plot {
-      position: relative;
-      aspect-ratio: 1 / 0.9;
-      background: linear-gradient(135deg, #9c6b43 0%, #7d502d 100%);
-      border: 3px solid #5c3718;
-      border-radius: 14px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: inset 0 3px 6px rgba(0,0,0,0.25), 0 4px 0 #472910;
-      transition: transform 0.1s;
-    }
-
-    .field-plot:active { transform: scale(0.95); }
-
-    .field-plot.ready {
-      border-color: #ffe066;
-      box-shadow: 0 0 12px rgba(255, 224, 102, 0.75), 0 4px 0 #997300;
-    }
-
-    .plot-emoji {
-      font-size: 2rem;
-      line-height: 1;
-    }
-
-    .field-plot.ready .plot-emoji {
-      animation: pop 0.8s infinite alternate ease-in-out;
-    }
-
-    @keyframes pop {
-      from { transform: scale(1); }
-      to { transform: scale(1.14) translateY(-3px); }
-    }
-
-    .plot-timer {
-      font-size: 0.7rem;
-      font-weight: 800;
-      color: #fff6e0;
-      margin-top: 3px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.7);
-    }
-
-    /* Alt Tohum Çubuğu */
-    .bottom-dock {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-      max-width: 480px;
-      background: linear-gradient(180deg, #6e4522, #4d2e14);
-      border-top: 3px solid #d4a359;
-      padding: 8px 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      z-index: 25;
-    }
-
-    .seed-pill {
-      flex: 1;
-      background: #fff4d6;
-      border: 2px solid #b58342;
-      border-radius: 12px;
-      padding: 6px 4px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: pointer;
-      color: #4a2c11;
-    }
-
-    .seed-pill.active {
+    .seed-btn.active {
       background: #d8f5a2;
-      border-color: #37b24d;
+      border-color: #2f9e44;
       transform: translateY(-3px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
     }
 
-    .seed-pill span:first-child { font-size: 1.3rem; }
-    .seed-pill small { font-size: 0.68rem; font-weight: 800; }
+    .seed-btn small {
+      color: #9c6211;
+      font-size: 0.74rem;
+    }
 
-    /* Toast Bildirimi */
+    /* Bildirim */
     .toast {
-      position: fixed;
-      top: 66px;
+      position: absolute;
+      top: 56px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(40, 24, 10, 0.92);
+      background: rgba(38, 22, 9, 0.92);
       color: #ffe8a3;
-      padding: 8px 16px;
+      border: 2px solid #e0b363;
+      padding: 6px 14px;
       border-radius: 999px;
-      border: 2px solid #d4a359;
       font-size: 0.82rem;
       font-weight: 700;
-      z-index: 50;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.25s;
+      z-index: 20;
       white-space: nowrap;
     }
     .toast.show { opacity: 1; }
 
-    /* Modal (Hay Day Ahşap Paneli) */
+    /* Modal */
     .modal-backdrop {
-      position: fixed;
+      position: absolute;
       inset: 0;
       background: rgba(0, 0, 0, 0.55);
       display: none;
       align-items: center;
       justify-content: center;
       padding: 16px;
-      z-index: 60;
+      z-index: 30;
     }
     .modal-backdrop.open { display: flex; }
 
     .modal-box {
       width: 100%;
-      max-width: 400px;
+      max-width: 390px;
       background: #fff8e7;
       border: 4px solid #7d4e24;
-      border-radius: 20px;
+      border-radius: 18px;
       overflow: hidden;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.45);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
     }
 
     .modal-header {
       background: linear-gradient(180deg, #8c5a2b, #6b411c);
       color: #fff8e7;
-      padding: 12px 16px;
+      padding: 10px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       font-weight: 800;
-      font-size: 1.05rem;
+      font-size: 1rem;
     }
 
     .close-btn {
       background: #e03131;
       color: #fff;
       border: 2px solid #fff;
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
       font-weight: 900;
       cursor: pointer;
     }
 
     .modal-body {
-      padding: 14px;
-      max-height: 68vh;
+      padding: 12px;
+      max-height: 60vh;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .item-row {
       background: #f7ebd2;
       border: 2px solid #dec495;
       border-radius: 12px;
-      padding: 10px 12px;
+      padding: 9px 11px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
-    .item-info h4 {
-      font-size: 0.92rem;
-      color: #4a2c11;
-    }
+    .item-info h4 { font-size: 0.9rem; color: #4a2c11; }
+    .item-info p { font-size: 0.74rem; color: #785532; margin-top: 2px; }
 
-    .item-info p {
-      font-size: 0.76rem;
-      color: #785532;
-      margin-top: 2px;
-    }
-
-    .action-btn {
+    .act-btn {
       background: linear-gradient(180deg, #51cf66, #2f9e44);
       color: #fff;
       border: 2px solid #2b8a3e;
-      border-radius: 10px;
-      padding: 8px 12px;
+      border-radius: 9px;
+      padding: 7px 11px;
       font-weight: 800;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       cursor: pointer;
       white-space: nowrap;
     }
-
-    .action-btn:disabled {
+    .act-btn:disabled {
       background: #adb5bd;
       border-color: #868e96;
       cursor: not-allowed;
     }
-
-    .sell-btn {
+    .act-btn.sell {
       background: linear-gradient(180deg, #fcc419, #f08c00);
       border-color: #d9480f;
       color: #4a2200;
     }
+
+    @media (max-width: 600px) {
+      .hud-card { padding: 4px 9px; font-size: 0.76rem; }
+      .seed-btn { padding: 4px 8px; font-size: 0.74rem; }
+      .xp-track { width: 48px; }
+    }
   </style>
 </head>
 <body>
-  <div class="game-shell">
-    <div class="sky-decor">
-      <div class="cloud c1">☁️</div>
-      <div class="cloud c2">☁️</div>
-      <div class="sun">☀️</div>
-    </div>
+  <div class="stage">
+    <canvas id="gameCanvas"></canvas>
 
+    <!-- Üst HUD -->
     <div class="hud">
-      <div class="level-box">
-        <div class="level-star" id="levelEl">1</div>
-        <div class="xp-wrap">
-          <span class="xp-label">XP: <span id="xpText">0/30</span></span>
-          <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
-        </div>
-      </div>
-      <div class="hud-right">
-        <div class="pill" title="Altın">🪙 <span id="goldEl">40</span></div>
-        <div class="pill" id="openBarnHud" title="Ambarı Aç">🏠 <span id="barnCountEl">0</span></div>
-      </div>
-    </div>
-
-    <div class="farm-world">
-      <!-- Binalar -->
-      <div>
-        <div class="section-title">🏘️ Çiftlik Binaları</div>
-        <div class="buildings-row">
-          <div class="building-card" id="truckCard">
-            <span class="badge" id="orderBadge">!</span>
-            <span class="building-icon">🚚</span>
-            <div class="building-name">Siparişler</div>
-            <div class="building-status" id="truckStatus">3 sipariş</div>
-          </div>
-
-          <div class="building-card" id="bakeryCard">
-            <span class="badge" id="bakeryBadge">✓</span>
-            <span class="building-icon">🥖</span>
-            <div class="building-name">Fırın</div>
-            <div class="building-status" id="bakeryStatus">Hazır</div>
-          </div>
-
-          <div class="building-card" id="barnCard">
-            <span class="building-icon">🏠</span>
-            <div class="building-name">Ambar</div>
-            <div class="building-status" id="barnStatus">0 ürün</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Hayvanlar -->
-      <div>
-        <div class="section-title">🐾 Hayvan Ağılları (Besle &amp; Topla)</div>
-        <div class="pens-row">
-          <div class="pen-card" id="chickenPen">
-            <div class="pen-animals">🐔🐔</div>
-            <div class="pen-title">Kümes</div>
-            <div class="pen-sub" id="chickenSub">1 🌾 ile besle</div>
-          </div>
-
-          <div class="pen-card" id="cowPen">
-            <div class="pen-animals">🐄🐄</div>
-            <div class="pen-title">Ahır</div>
-            <div class="pen-sub" id="cowSub">1 🌽 ile besle</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tarlalar -->
-      <div class="fields-area">
-        <div class="section-title">🌱 Tarlalar (Ekmek için aşağıdan tohum seç)</div>
-        <div class="fields-grid" id="fieldsGrid"></div>
-      </div>
-    </div>
-
-    <!-- Alt Tohum Çubuğu -->
-    <div class="bottom-dock" id="seedDock"></div>
-  </div>
-
-  <div class="toast" id="toastEl"></div>
-
-  <!-- Ortak Modal -->
-  <div class="modal-backdrop" id="modalBackdrop">
-    <div class="modal-box">
-      <div class="modal-header">
-        <span id="modalTitle">Başlık</span>
-        <button class="close-btn" id="closeModalBtn">✕</button>
-      </div>
-      <div class="modal-body" id="modalBody"></div>
-    </div>
-  </div>
-
-  <script>
-    const ITEMS = {
-      wheat:      { name: "Buğday",        emoji: "🌾", sell: 4,  seedCost: 2,  growTime: 5  },
-      corn:       { name: "Mısır",         emoji: "🌽", sell: 8,  seedCost: 4,  growTime: 10 },
-      strawberry: { name: "Çilek",         emoji: "🍓", sell: 15, seedCost: 8,  growTime: 16 },
-      egg:        { name: "Yumurta",       emoji: "🥚", sell: 12 },
-      milk:       { name: "Süt",           emoji: "🥛", sell: 18 },
-      bread:      { name: "Ekmek",         emoji: "🍞", sell: 22 },
-      cornbread:  { name: "Mısır Ekmeği",  emoji: "🥐", sell: 36 },
-      cake:       { name: "Çilekli Pasta", emoji: "🍰", sell: 75 }
-    };
-
-    const RECIPES = [
-      { id: "bread",     time: 8,  xp: 6,  ingredients: { wheat: 2 } },
-      { id: "cornbread", time: 12, xp: 10, ingredients: { corn: 2, egg: 1 } },
-      { id: "cake",      time: 18, xp: 20, ingredients: { wheat: 1, strawberry: 2, egg: 1, milk: 1 } }
-    ];
-
-    const STORAGE_KEY = "haydayMiniFarm_v1";
-
-    let state = {
-      gold: 40,
-      level: 1,
-      xp: 0,
-      selectedSeed: "wheat",
-      inventory: { wheat: 2, corn: 0, strawberry: 0, egg: 0, milk: 0, bread: 0, cornbread: 0, cake: 0 },
-      fields: Array.from({ length: 6 }, () => ({ crop: null, readyAt: 0 })),
-      animals: {
-        chicken: { state: "hungry", readyAt: 0 },
-        cow:     { state: "hungry", readyAt: 0 }
-      },
-      bakery: { bakingId: null, readyAt: 0 },
-      orders: []
-    };
-
-    const modalBackdrop = document.getElementById("modalBackdrop");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalBody = document.getElementById("modalBody");
-    const toastEl = document.getElementById("toastEl");
-    let currentModal = null;
-    let toastTimer = null;
-
-    function showToast(msg) {
-      toastEl.textContent = msg;
-      toastEl.classList.add("show");
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2400);
-    }
-
-    function saveGame() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }
-
-    function loadGame() {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      try {
-        const parsed = JSON.parse(raw);
-        if (parsed && parsed.inventory && Array.isArray(parsed.fields)) {
-          state = parsed;
-        }
-      } catch (e) {}
-    }
-
-    function xpNeeded() {
-      return state.level * 30;
-    }
-
-    function addXp(amount) {
-      state.xp += amount;
-      while (state.xp >= xpNeeded()) {
-        state.xp -= xpNeeded();
-        state.level += 1;
-        state.gold += 25;
-        showToast(`🎉 Seviye ${state.level} oldun! +25🪙 bonus!`);
-      }
-    }
-
-    function generateOrder() {
-      const pool = ["wheat", "corn", "egg", "bread"];
-      if (state.level >= 2) pool.push("milk", "strawberry", "cornbread");
-      if (state.level >= 3) pool.push("cake");
-
-      const item1 = pool[Math.floor(Math.random() * pool.length)];
-      const qty1 = item1 === "cake" ? 1 : Math.floor(Math.random() * 2) + 1;
-      const req = { [item1]: qty1 };
-
-      if (Math.random() > 0.45) {
-        const item2 = pool[Math.floor(Math.random() * pool.length)];
-        if (item2 !== item1) req[item2] = 1;
-      }
-
-      let baseGold = 0;
-      for (const [k, v] of Object.entries(req)) {
-        baseGold += ITEMS[k].sell * v;
-      }
-
-      return {
-        id: Math.random().toString(36).slice(2, 8),
-        req,
-        gold: Math.round(baseGold * 1.45),
-        xp: Math.max(8, Math.round(baseGold * 0.4))
-      };
-    }
-
-    function ensureOrders() {
-      while (state.orders.length < 3) {
-        state.orders.push(generateOrder());
-      }
-    }
-
-    function canFulfill(req) {
-      return Object.entries(req).every(([k, v]) => (state.inventory[k] || 0) >= v);
-    }
-
-    /* Tohum Çubuğu */
-    function renderSeedDock() {
-      const dock = document.getElementById("seedDock");
-      dock.innerHTML = "";
-      ["wheat", "corn", "strawberry"].forEach(id => {
-        const item = ITEMS[id];
-        const btn = document.createElement("button");
-        btn.className = "seed-pill" + (state.selectedSeed === id ? " active" : "");
-        btn.innerHTML = `
-          <span>${item.emoji}</span>
-          <small>${item.name} (${item.seedCost}🪙)</small>
-        `;
-        btn.onclick = () => {
-          state.selectedSeed = id;
-          renderSeedDock();
-          saveGame();
-        };
-        dock.appendChild(btn);
-      });
-    }
-
-    /* Tarla Tıklama */
-    function handleFieldClick(i) {
-      const f = state.fields[i];
-      const now = Date.now();
-
-      if (!f.crop) {
-        const seed = ITEMS[state.selectedSeed];
-        if (state.gold < seed.seedCost) {
-          showToast(`Yeterli altının yok! (${seed.seedCost}🪙 gerekli)`);
-          return;
-        }
-        state.gold -= seed.seedCost;
-        f.crop = state.selectedSeed;
-        f.readyAt = now + seed.growTime * 1000;
-        saveGame();
-        updateUI();
-        return;
-      }
-
-      if (now >= f.readyAt) {
-        const cropId = f.crop;
-        state.inventory[cropId] = (state.inventory[cropId] || 0) + 2; // 1 ek, 2 biç!
-        addXp(3);
-        f.crop = null;
-        f.readyAt = 0;
-        showToast(`+2 ${ITEMS[cropId].emoji} ${ITEMS[cropId].name} ambara eklendi!`);
-        saveGame();
-        updateUI();
-      } else {
-        const left = Math.ceil((f.readyAt - now) / 1000);
-        showToast(`${ITEMS[f.crop].name} büyüyor (${left} sn)`);
-      }
-    }
-
-    /* Hayvan Tıklama */
-    function handleAnimalClick(type) {
-      const a = state.animals[type];
-      const now = Date.now();
-      const cfg = type === "chicken"
-        ? { feed: "wheat", product: "egg", time: 10, xp: 5 }
-        : { feed: "corn",  product: "milk", time: 14, xp: 8 };
-
-      if (a.state === "hungry") {
-        if ((state.inventory[cfg.feed] || 0) < 1) {
-          showToast(`Beslemek için 1 ${ITEMS[cfg.feed].emoji} ${ITEMS[cfg.feed].name} lazım!`);
-          return;
-        }
-        state.inventory[cfg.feed] -= 1;
-        a.state = "producing";
-        a.readyAt = now + cfg.time * 1000;
-        showToast(`Beslendi! ${cfg.time} sn içinde ${ITEMS[cfg.product].name} hazır.`);
-        saveGame();
-        updateUI();
-      } else if (a.state === "producing" && now >= a.readyAt) {
-        state.inventory[cfg.product] = (state.inventory[cfg.product] || 0) + 1;
-        addXp(cfg.xp);
-        a.state = "hungry";
-        a.readyAt = 0;
-        showToast(`+1 ${ITEMS[cfg.product].emoji} ${ITEMS[cfg.product].name} toplandı!`);
-        saveGame();
-        updateUI();
-      } else {
-        const left = Math.ceil((a.readyAt - now) / 1000);
-        showToast(`Üretim sürüyor (${left} sn kaldı)`);
-      }
-    }
-
-    /* Modallar */
-    function openModal(type) {
-      currentModal = type;
-      modalBackdrop.classList.add("open");
-      renderModalContent();
-    }
-
-    function closeModal() {
-      currentModal = null;
-      modalBackdrop.classList.remove("open");
-    }
-
-    function renderModalContent() {
-      if (!currentModal) return;
-      modalBody.innerHTML = "";
-      const now = Date.now();
-
-      if (currentModal === "truck") {
-        modalTitle.textContent = "🚚 Sipariş Panosu";
-        state.orders.forEach((order, idx) => {
-          const reqText = Object.entries(order.req)
-            .map(([k, v]) => `${v}x ${ITEMS[k].emoji} ${ITEMS[k].name}`)
-            .join(" + ");
-          const ok = canFulfill(order.req);
-
-          const row = document.createElement("div");
-          row.className = "item-row";
-          row.innerHTML = `
-            <div class="item-info">
-              <h4>${reqText}</h4>
-              <p>Ödül: <b>${order.gold}🪙</b> • <b>+${order.xp} XP</b></p>
-            </div>
-            <button class="action-btn" ${ok ? "" : "disabled"}>Gönder</button>
-          `;
-          row.querySelector("button").onclick = () => {
-            if (!canFulfill(order.req)) return;
-            for (const [k, v] of Object.entries(order.req)) {
-              state.inventory[k] -= v;
-            }
-            state.gold += order.gold;
-            addXp(order.xp);
-            state.orders.splice(idx, 1);
-            ensureOrders();
-            showToast(`🚚 Sipariş teslim edildi! +${order.gold}🪙`);
-            saveGame();
-            updateUI();
-            renderModalContent();
-          };
-          modalBody.appendChild(row);
-        });
-      }
-
-      if (currentModal === "bakery") {
-        modalTitle.textContent = "🥖 Çiftlik Fırını";
-
-        if (state.bakery.bakingId) {
-          const item = ITEMS[state.bakery.bakingId];
-          const done = now >= state.bakery.readyAt;
-          const left = Math.max(0, Math.ceil((state.bakery.readyAt - now) / 1000));
-          const statusRow = document.createElement("div");
-          statusRow.className = "item-row";
-          statusRow.style.background = done ? "#d8f5a2" : "#fff3bf";
-          statusRow.innerHTML = `
-            <div class="item-info">
-              <h4>${item.emoji} ${item.name} ${done ? "Hazır!" : "Pişiyor..."}</h4>
-              <p>${done ? "Ambara almak için tıkla" : `${left} saniye kaldı`}</p>
-            </div>
-            <button class="action-btn" ${done ? "" : "disabled"}>Al</button>
-          `;
-          statusRow.querySelector("button").onclick = () => {
-            const r = RECIPES.find(x => x.id === state.bakery.bakingId);
-            state.inventory[state.bakery.bakingId] = (state.inventory[state.bakery.bakingId] || 0) + 1;
-            addXp(r ? r.xp : 8);
-            showToast(`+1 ${item.emoji} ${item.name} fırından çıktı!`);
-            state.bakery.bakingId = null;
-            state.bakery.readyAt = 0;
-            saveGame();
-            updateUI();
-            renderModalContent();
-          };
-          modalBody.appendChild(statusRow);
-        }
-
-        RECIPES.forEach(r => {
-          const item = ITEMS[r.id];
-          const ingText = Object.entries(r.ingredients)
-            .map(([k, v]) => `${v}x ${ITEMS[k].emoji}`)
-            .join(" + ");
-          const canBake = !state.bakery.bakingId && canFulfill(r.ingredients);
-
-          const row = document.createElement("div");
-          row.className = "item-row";
-          row.innerHTML = `
-            <div class="item-info">
-              <h4>${item.emoji} ${item.name} (${r.time} sn)</h4>
-              <p>Gereken: ${ingText}</p>
-            </div>
-            <button class="action-btn" ${canBake ? "" : "disabled"}>Pişir</button>
-          `;
-          row.querySelector("button").onclick = () => {
-            if (!canBake) return;
-            for (const [k, v] of Object.entries(r.ingredients)) {
-              state.inventory[k] -= v;
-            }
-            state.bakery.bakingId = r.id;
-            state.bakery.readyAt = Date.now() + r.time * 1000;
-            showToast(`🔥 ${item.name} fırına verildi!`);
-            saveGame();
-            updateUI();
-            renderModalContent();
-          };
-          modalBody.appendChild(row);
-        });
-      }
-
-      if (currentModal === "barn") {
-        modalTitle.textContent = "🏠 Ambar (Stok & Satış)";
-        Object.entries(ITEMS).forEach(([id, item]) => {
-          const count = state.inventory[id] || 0;
-          const row = document.createElement("div");
-          row.className = "item-row";
-          row.innerHTML = `
-            <div class="item-info">
-              <h4>${item.emoji} ${item.name}: <b>${count} adet</b></h4>
-              <p>Pazar değeri: ${item.sell}🪙 / adet</p>
-            </div>
-            <button class="action-btn sell-btn" ${count > 0 ? "" : "disabled"}>1 Sat (+${item.sell}🪙)</button>
-          `;
-          row.querySelector("button").onclick = () => {
-            if (state.inventory[id] > 0) {
-              state.inventory[id] -= 1;
-              state.gold += item.sell;
-              saveGame();
-              updateUI();
-              renderModalContent();
-            }
-          };
-          modalBody.appendChild(row);
-        });
-      }
-    }
-
-    /* Ekranı Güncelle */
-    function initFieldsDOM() {
-      const grid = document.getElementById("fieldsGrid");
-      grid.innerHTML = "";
-      state.fields.forEach((_, i) => {
-        const div = document.createElement("div");
-        div.className = "field-plot";
-        div.innerHTML = `<div class="plot-emoji"></div><div class="plot-timer"></div>`;
-        div.onclick = () => handleFieldClick(i);
-        grid.appendChild(div);
-      });
-    }
-
-    function updateUI() {
-      const now = Date.now();
-
-      // HUD
-      document.getElementById("levelEl").textContent = state.level;
-      document.getElementById("xpText").textContent = `${state.xp}/${xpNeeded()}`;
-      document.getElementById("xpFill").style.width = `${Math.min(100, (state.xp / xpNeeded()) * 100)}%`;
-      document.getElementById("goldEl").textContent = state.gold;
-
-      const totalItems = Object.values(state.inventory).reduce((a, b) => a + b, 0);
-      document.getElementById("barnCountEl").textContent = totalItems;
-      document.getElementById("barnStatus").textContent = `${totalItems} ürün`;
-
-      // Sipariş bildirimi
-      const readyOrders = state.orders.filter(o => canFulfill(o.req)).length;
-      const orderBadge = document.getElementById("orderBadge");
-      orderBadge.classList.toggle("show", readyOrders > 0);
-      orderBadge.textContent = readyOrders;
-
-      // Fırın durumu
-      const bakeryStatus = document.getElementById("bakeryStatus");
-      const bakeryBadge = document.getElementById("bakeryBadge");
-      if (state.bakery.bakingId) {
-        if (now >= state.bakery.readyAt) {
-          bakeryStatus.textContent = "Hazır!";
-          bakeryBadge.classList.add("show");
-        } else {
-          const left = Math.ceil((state.bakery.readyAt - now) / 1000);
-          bakeryStatus.textContent = `${left} sn`;
-          bakeryBadge.classList.remove("show");
-        }
-      } else {
-        bakeryStatus.textContent = "Boş";
-        bakeryBadge.classList.remove("show");
-      }
-
-      // Hayvanlar
-      ["chicken", "cow"].forEach(type => {
-        const a = state.animals[type];
-        const penEl = document.getElementById(type === "chicken" ? "chickenPen" : "cowPen");
-        const subEl = document.getElementById(type === "chicken" ? "chickenSub" : "cowSub");
-        penEl.classList.remove("ready");
-
-        if (a.state === "hungry") {
-          subEl.textContent = type === "chicken" ? "1 🌾 ile besle" : "1 🌽 ile besle";
-        } else if (now >= a.readyAt) {
-          penEl.classList.add("ready");
-          subEl.textContent = type === "chicken" ? "🥚 Yumurta hazır!" : "🥛 Süt hazır!";
-        } else {
-          const left = Math.ceil((a.readyAt - now) / 1000);
-          subEl.textContent = `⏳ ${left} sn kaldı`;
-        }
-      });
-
-      // Tarlalar
-      const plots = document.querySelectorAll(".field-plot");
-      state.fields.forEach((f, i) => {
-        const el = plots[i];
-        const emojiEl = el.querySelector(".plot-emoji");
-        const timerEl = el.querySelector(".plot-timer");
-        el.classList.remove("ready");
-
-        if (!f.crop) {
-          emojiEl.textContent = "";
-          timerEl.textContent = "Ek";
-        } else if (now >= f.readyAt) {
-          el.classList.add("ready");
-          emojiEl.textContent = ITEMS[f.crop].emoji;
-          timerEl.textContent = "Biç!";
-        } else {
-          const left = Math.ceil((f.readyAt - now) / 1000);
-          emojiEl.textContent = "🌱";
-          timerEl.textContent = `${left} sn`;
-        }
-      });
-
-      if (currentModal === "bakery" && state.bakery.bakingId) {
-        renderModalContent();
-      }
-    }
-
-    // Eventler
-    document.getElementById("truckCard").onclick = () => openModal("truck");
-    document.getElementById("bakeryCard").onclick = () => openModal("bakery");
-    document.getElementById("barnCard").onclick = () => openModal("barn");
-    document.getElementById("openBarnHud").onclick = () => openModal("barn");
-    document.getElementById("chickenPen").onclick = () => handleAnimalClick("chicken");
-    document.getElementById("cowPen").onclick = () => handleAnimalClick("cow");
-    document.getElementById("closeModalBtn").onclick = closeModal;
-    modalBackdrop.onclick = (e) => { if (e.target === modalBackdrop) closeModal(); };
-
-    loadGame();
-    ensureOrders();
-    renderSeedDock();
-    initFieldsDOM();
-    updateUI();
-    setInterval(updateUI, 500);
-  </script>
-</body>
-</html>
+      <div class="hud-group">
+        <div class="hud-card">
+          <div class="lvl-badge" id="lvlEl">1</div>
+          <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
