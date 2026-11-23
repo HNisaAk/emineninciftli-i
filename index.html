@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Mini Çiftlik</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background: linear-gradient(180deg, #e8f3dc 0%, #f7f4e9 100%);
+      color: #3d3126;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 14px;
+      touch-action: manipulation;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 440px;
+      background: #fffdf7;
+      border: 2px solid #d9cbb8;
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: 0 12px 30px rgba(74, 58, 40, 0.1);
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 1.35rem;
+      color: #466335;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .stats {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stat-pill {
+      background: #f5efe2;
+      border: 1px solid #e2d4be;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .seeds-bar {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .seed-btn {
+      background: #f8f5ec;
+      border: 2px solid #e5dac8;
+      border-radius: 12px;
+      padding: 8px 4px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: transform 0.12s, border-color 0.15s, background 0.15s;
+      color: #3d3126;
+    }
+
+    .seed-btn:active {
+      transform: scale(0.95);
+    }
+
+    .seed-btn.active {
+      background: #edf7e4;
+      border-color: #639644;
+      box-shadow: 0 4px 10px rgba(99, 150, 68, 0.18);
+    }
+
+    .seed-emoji {
+      font-size: 1.35rem;
+      line-height: 1.1;
+    }
+
+    .seed-name {
+      font-size: 0.68rem;
+      font-weight: 600;
+    }
+
+    .seed-cost {
+      font-size: 0.68rem;
+      color: #9e6b17;
+      font-weight: 700;
+    }
+
+    .farm-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      background: #d8e7c5;
+      padding: 12px;
+      border-radius: 16px;
+      border: 2px solid #bdd4a2;
+      margin-bottom: 12px;
+    }
+
+    .plot {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      border-radius: 14px;
+      border: 2px solid #7c563a;
+      background: #9c704e;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.12s, background 0.2s, border-color 0.2s;
+      overflow: hidden;
+    }
+
+    .plot:active {
+      transform: scale(0.96);
+    }
+
+    .plot.watered {
+      background: #734c30;
+      border-color: #54351e;
+    }
+
+    .plot.ready {
+      background: #87603f;
+      border-color: #e6b800;
+      box-shadow: 0 0 0 2px rgba(230, 184, 0, 0.35);
+    }
+
+    .plot.locked {
+      background: #c7d4b6;
+      border: 2px dashed #8fa37a;
+      color: #556644;
+    }
+
+    .plot-emoji {
+      font-size: 2rem;
+      line-height: 1;
+      transition: transform 0.2s;
+    }
+
+    .plot.ready .plot-emoji {
+      animation: bounce 0.9s infinite alternate ease-in-out;
+    }
+
+    @keyframes bounce {
+      from { transform: translateY(0) scale(1); }
+      to { transform: translateY(-4px) scale(1.08); }
+    }
+
+    .plot-sub {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #fff8eb;
+      margin-top: 4px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.45);
+    }
+
+    .plot.locked .plot-sub {
+      color: #4a593c;
+      text-shadow: none;
+    }
+
+    .water-badge {
+      position: absolute;
+      top: 5px;
+      right: 6px;
+      font-size: 0.78rem;
+    }
+
+    .progress-wrap {
+      position: absolute;
+      bottom: 6px;
+      left: 8px;
+      right: 8px;
+      height: 6px;
+      background: rgba(0, 0, 0, 0.28);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #a4e058;
+      border-radius: 999px;
+      transition: width 0.2s linear;
+    }
+
+    .plot.ready .progress-bar {
+      background: #ffd43b;
+    }
+
+    .float-text {
+      position: absolute;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #ffe066;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+      pointer-events: none;
+      animation: floatUp 0.85s ease-out forwards;
+      z-index: 10;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-28px) scale(1.15); }
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .action-btn {
+      flex: 1;
+      border: none;
+      border-radius: 12px;
+      padding: 11px 12px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.15s;
+    }
+
+    .action-btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn-harvest {
+      background: #5c913b;
+      color: #ffffff;
+    }
+
+    .btn-reset {
+      flex: 0 0 auto;
+      background: #f2e8dc;
+      color: #7d5b42;
+      padding: 11px 14px;
+    }
+
+    .toast {
+      min-height: 22px;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #5c6e4b;
+    }
+
+    .guide {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #ede4d5;
+      font-size: 0.74rem;
+      color: #7d7163;
+      text-align: center;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>🏡 Mini Çiftlik</h1>
+      <div class="stats">
+        <div class="stat-pill" title="Altın">🪙 <span id="goldEl">50</span></div>
+        <div class="stat-pill" title="Toplam Hasat">🧺 <span id="harvestEl">0</span></div>
+      </div>
+    </header>
+
+    <div class="seeds-bar" id="seedsBar"></div>
+
+    <div class="farm-grid" id="farmGrid"></div>
+
+    <div class="actions">
+      <button class="action-btn btn-harvest" id="harvestAllBtn">🧺 Hazır Olanları Topla</button>
+      <button class="action-btn btn-reset" id="resetBtn" title="Çiftliği Sıfırla">↺</button>
+    </div>
+
+    <div class="toast" id="toastEl">Boş toprağa dokunup tohum ekebilirsin!</div>
+
+    <div class="guide">
+      🌱 Boş toprağa tıkla: <b>Ek</b> • 💧 Büyüyene tıkla: <b>Sula (2x Hız)</b> • ✨ Hazıra tıkla: <b>Hasat Et</b>
+    </div>
+  </div>
+
+  <script>
+    const CROPS = [
+      { id: "wheat",      name: "Buğday",   emoji: "🌾", cost: 5,   reward: 12,  time: 6  },
+      { id: "carrot",     name: "Havuç",    emoji: "🥕", cost: 15,  reward: 35,  time: 12 },
+      { id: "strawberry", name: "Çilek",    emoji: "🍓", cost: 35,  reward: 80,  time: 20 },
+      { id: "orange",     name: "Portakal", emoji: "🍊", cost: 70,  reward: 165, time: 30 },
+      { id: "sunflower",  name: "Ayçiçeği", emoji: "🌻", cost: 120, reward: 300, time: 45 }
+    ];
+
+    const UNLOCK_COSTS = [0, 0, 0, 0, 0, 0, 40, 80, 130, 200, 300, 420];
+    const STORAGE_KEY = "miniCiftlikSave_v1";
+
+    let state = {
+      gold: 50,
+      harvests: 0,
+      selectedCrop: "wheat",
+      plots: UNLOCK_COSTS.map((cost) => ({
+        unlocked: cost === 0,
+        unlockCost: cost,
+        cropId: null,
+        totalDuration: 0,
+        readyAt: 0,
+        watered: false
+      }))
+    };
+
+    const goldEl = document.getElementById("goldEl");
+    const harvestEl = document.getElementById("harvestEl");
+    const seedsBar = document.getElementById("seedsBar");
+    const farmGrid = document.getElementById("farmGrid");
+    const toastEl = document.getElementById("toastEl");
+    const harvestAllBtn = document.getElementById("harvestAllBtn");
+    const resetBtn = document.getElementById("resetBtn");
+
+    let plotElements = [];
+    let toastTimer = null;
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toastEl.textContent = "";
+      }, 2800);
+    }
+
+    function saveGame() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function loadGame() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && Array.isArray(parsed.plots) && parsed.plots.length === UNLOCK_COSTS.length) {
+          state = parsed;
+        }
+      } catch (e) {
+        // Bozuk kayıt varsa varsayılanla devam et
+      }
+    }
+
+    function getCrop(id) {
+      return CROPS.find((c) => c.id === id);
+    }
+
+    function renderSeeds() {
+      seedsBar.innerHTML = "";
+      CROPS.forEach((crop) => {
+        const btn = document.createElement("button");
+        btn.className = "seed-btn" + (state.selectedCrop === crop.id ? " active" : "");
+        btn.innerHTML = `
+          <span class="seed-emoji">${crop.emoji}</span>
+          <span class="seed-name">${crop.name}</span>
+          <span class="seed-cost">${crop.cost}🪙</span>
+        `;
+        btn.title = `${crop.name}: ${crop.cost} altın → ${crop.reward} altın (${crop.time} sn)`;
+        btn.addEventListener("click", () => {
+          state.selectedCrop = crop.id;
+          renderSeeds();
+          showToast(`${crop.emoji} ${crop.name} seçildi (Getiri: ${crop.reward}🪙 / ${crop.time} sn)`);
+          saveGame();
+        });
+        seedsBar.appendChild(btn);
+      });
+    }
+
+    function initGrid() {
+      farmGrid.innerHTML = "";
+      plotElements = [];
+
+      state.plots.forEach((_, index) => {
+        const div = document.createElement("div");
+        div.className = "plot";
+        div.innerHTML = `
+          <span class="water-badge"></span>
+          <div class="plot-emoji"></div>
+          <div class="plot-sub"></div>
+          <div class="progress-wrap" style="display:none;">
+            <div class="progress-bar"></div>
+          </div>
+        `;
+        div.addEventListener("click", () => handlePlotClick(index, div));
+        farmGrid.appendChild(div);
+        plotElements.push(div);
+      });
+    }
+
+    function spawnFloatingText(plotEl, text) {
+      const span = document.createElement("span");
+      span.className = "float-text";
+      span.textContent = text;
+      plotEl.appendChild(span);
+      setTimeout(() => span.remove(), 850);
+    }
+
+    function handlePlotClick(index, plotEl) {
+      const plot = state.plots[index];
+      const now = Date.now();
+
+      // 1. Kilitli tarla açma
+      if (!plot.unlocked) {
+        if (state.gold >= plot.unlockCost) {
+          state.gold -= plot.unlockCost;
+          plot.unlocked = true;
+          showToast("🎉 Yeni tarla açıldı!");
+          saveGame();
+          updateUI();
+        } else {
+          showToast(`Bu tarla için ${plot.unlockCost}🪙 gerekiyor.`);
+        }
+        return;
+      }
+
+      // 2. Boş tarlaya ekim yapma
+      if (!plot.cropId) {
+        const crop = getCrop(state.selectedCrop);
+        if (state.gold < crop.cost) {
+          showToast(`Yeterli altının yok! (${crop.name} ${crop.cost}🪙)`);
+          return;
+        }
+        state.gold -= crop.cost;
+        plot.cropId = crop.id;
+        plot.totalDuration = crop.time * 1000;
+        plot.readyAt = now + plot.totalDuration;
+        plot.watered = false;
+        saveGame();
+        updateUI();
+        return;
+      }
+
+      // 3. Hasat zamanı geldiyse topla
+      if (now >= plot.readyAt) {
+        harvestPlot(index, plotEl);
+        return;
+      }
+
+      // 4. Büyüyorsa sula (kalan süreyi yarıya indirir)
+      if (!plot.watered) {
+        const remaining = plot.readyAt - now;
+        plot.readyAt = now + remaining / 2;
+        plot.watered = true;
+        showToast("💧 Sulandı! Büyüme hızlandı.");
+        saveGame();
+        updateUI();
+      } else {
+        const secLeft = Math.ceil((plot.readyAt - now) / 1000);
+        showToast(`Zaten sulandı, ${secLeft} saniye kaldı.`);
+      }
+    }
+
+    function harvestPlot(index, plotEl) {
+      const plot = state.plots[index];
+      const crop = getCrop(plot.cropId);
+      if (!crop) return;
+
+      state.gold += crop.reward;
+      state.harvests += 1;
+      plot.cropId = null;
+      plot.readyAt = 0;
+      plot.totalDuration = 0;
+      plot.watered = false;
+
+      if (plotEl) {
+        spawnFloatingText(plotEl, `+${crop.reward}🪙`);
+      }
+      saveGame();
+      updateUI();
+    }
+
+    function updateUI() {
+      const now = Date.now();
+      goldEl.textContent = state.gold;
+      harvestEl.textContent = state.harvests;
+
+      state.plots.forEach((plot, index) => {
+        const el = plotElements[index];
+        const emojiEl = el.querySelector(".plot-emoji");
+        const subEl = el.querySelector(".plot-sub");
+        const waterEl = el.querySelector(".water-badge");
+        const progWrap = el.querySelector(".progress-wrap");
+        const progBar = el.querySelector(".progress-bar");
+
+        el.classList.remove("locked", "watered", "ready");
+        waterEl.textContent = "";
+
+        if (!plot.unlocked) {
+          el.classList.add("locked");
+          emojiEl.textContent = "🔒";
+          subEl.textContent = `${plot.unlockCost}🪙`;
+          progWrap.style.display = "none";
+          return;
+        }
+
+        if (!plot.cropId) {
+          emojiEl.textContent = "";
+          subEl.textContent = "Ek";
+          progWrap.style.display = "none";
+          return;
+        }
+
+        const crop = getCrop(plot.cropId);
+        const remaining = Math.max(0, plot.readyAt - now);
+        const progress = Math.min(100, Math.max(0, ((plot.totalDuration - remaining) / plot.totalDuration) * 100));
+
+        progWrap.style.display = "block";
+        progBar.style.width = `${progress}%`;
+
+        if (remaining <= 0) {
+          el.classList.add("ready");
+          emojiEl.textContent = crop.emoji;
+          subEl.textContent = "Topla!";
+        } else {
+          if (plot.watered) {
+            el.classList.add("watered");
+            waterEl.textContent = "💧";
+          }
+          emojiEl.textContent = progress < 45 ? "🌱" : "🌿";
+          subEl.textContent = `${Math.ceil(remaining / 1000)} sn`;
+        }
+      });
+    }
+
+    harvestAllBtn.addEventListener("click", () => {
+      const now = Date.now();
+      let count = 0;
+      let earned = 0;
+
+      state.plots.forEach((plot, index) => {
+        if (plot.unlocked && plot.cropId && now >= plot.readyAt) {
+          const crop = getCrop(plot.cropId);
+          earned += crop.reward;
+          count += 1;
+          harvestPlot(index, plotElements[index]);
+        }
+      });
+
+      if (count > 0) {
+        showToast(`🧺 ${count} ürün toplandı! +${earned}🪙`);
+      } else {
+        showToast("Henüz hasada hazır ürün yok.");
+      }
+    });
+
+    resetBtn.addEventListener("click", () => {
+      if (confirm("Çiftliğini sıfırlayıp en baştan başlamak istiyor musun?")) {
+        localStorage.removeItem(STORAGE_KEY);
+        location.reload();
+      }
+    });
+
+    loadGame();
+    renderSeeds();
+    initGrid();
+    updateUI();
+    setInterval(updateUI, 250);
+  </script>
+</body>
+</html>
